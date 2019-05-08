@@ -1,5 +1,5 @@
 #structs definition
-struct Metalass
+struct Metaclass
     name::Symbol
     superclass::Vector{Symbol}
     parameters::Vector
