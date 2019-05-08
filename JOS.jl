@@ -30,16 +30,39 @@ function make_class(name::Symbol, superclass::Vector, slots::Vector{Symbol})
     return object
 end
 
+
+function verifypairs(pairs)
+    param = Pair[]
+    for i in pairs
+        if (isa(i,Pair))
+            println("Added $(i)")
+            push!(param,i) 
+        end
+    end
+    return param
+end
+
 function make_instance(name::Metaclass, x...)
     for i in x
         println(i)
     end
-    object = Class(name, [])
+    param = verifypairs(x)
+    object = Class(name, param)
     return object
 end
 
-function get_slot(name::Class, slot::Symbol)
-
+function get_slot!(name::Class, slot::Symbol)
+    found = false 
+    for i in name.parametersvalue
+        if (i.first == slot)
+            println(i.second)
+            found = true
+            break
+        end
+    end
+    if !found
+        println("ERROR: Slot $(slot) is missing\n...")
+    end
 end
 
 function set_slot!(name::Class, slot::Symbol, value)
