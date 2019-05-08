@@ -1,7 +1,7 @@
 #structs definition
 struct Metaclass
     name::Symbol
-    superclass::Vector{Symbol}
+    superclass::Vector{Metaclass}
     parameters::Vector
 end
 
