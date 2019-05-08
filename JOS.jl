@@ -26,12 +26,16 @@ square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
 
 #functions
 function make_class(name::Symbol, superclass::Vector, slots::Vector{Symbol})
-   
-    return
+    object = Metaclass(name, superclass, slots)
+    return object
 end
 
-function make_instance(name::String, x...)
-
+function make_instance(name::Metaclass, x...)
+    for i in x
+        println(i)
+    end
+    object = Class(name, [])
+    return object
 end
 
 function get_slot(name::String, slot::Symbol)
