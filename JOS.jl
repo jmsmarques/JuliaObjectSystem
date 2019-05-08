@@ -38,12 +38,19 @@ function make_instance(name::Metaclass, x...)
     return object
 end
 
-function get_slot(name::String, slot::Symbol)
+function get_slot(name::Class, slot::Symbol)
 
 end
 
-function set_slot!(name::String, slot::Symbol, value)
-
+function set_slot!(name::Class, slot::Symbol, value)
+    for i in name.class.parameters
+        if i == slot
+            println("Contem")
+            return
+        end
+    end
+    println("ERROR: Slot ", slot, " is missing")
+    #error("Slot ", slot, " is missing")
 end
 #end of functions
 
