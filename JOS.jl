@@ -1,10 +1,13 @@
 #structs definition
-struct Object
+struct Metalass
     name::Symbol
     superclass::Vector{Symbol}
     parameters::Vector
+end
+
+struct Class
+    class::Metaclass
     parametersvalue::Vector
-    Object(name, superclass, parameters) = new(name, superclass, parameters)
 end
 
 struct IntrospectableFunction
