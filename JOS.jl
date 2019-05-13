@@ -10,12 +10,30 @@ struct Class
     parametersvalue::Vector
 end
 
+struct SpecializedMethod
+    name::Symbol
+    args::Vector{Symbol}
+    body::Expr
+end
+
+
+struct GenericFunction
+    name::Symbol
+    args::Vector{Symbol}
+    methods::Vector{SpecializedMethod}
+end
+
 struct IntrospectableFunction
     name
     args
     body
     nativefunction
 end
+
+
+
+#array with all generic functions
+gen_functions = GenericFunction[]
 #end of structs definition
 
 #examples from class
@@ -51,7 +69,7 @@ function make_instance(name::Metaclass, x...)
     return object
 end
 
-function get_slot!(name::Class, slot::Symbol)
+function get_slot(name::Class, slot::Symbol)
     found = false 
     for i in name.parametersvalue
         if (i.first == slot)
@@ -82,11 +100,32 @@ macro defclass(name, superclass, slotnames)
     
 end
 
-macro defgeneric(name::String)
-
+#create generic method
+macro defgeneric(x)
+    dump(x)
+    name = x.args[1]
+    args = Symbol[]
+    spe_methods = SpecializedMethod[]
+    aux_var = 1
+    for i in x.args
+       if aux_var != 1 
+           push!(args,i)
+       end 
+       aux_var = aux_var + 1
+   end
+   object = GenericFunction(name,args,spe_methods)
+   push!(gen_functions,object)
+   return object
 end
 
 macro defmethod(name)
-
+    println("Inside def method macro")
+    dump(name)
+    for nam in name.args
+        println(nam)
+    end
+    for gen in gen_functions
+        println(gen)
+    end
 end
 #end of macros

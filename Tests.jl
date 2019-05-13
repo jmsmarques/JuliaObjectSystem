@@ -8,5 +8,7 @@ c2 = make_instance(C2,:a=>3,:d=>6)
 dump(c2)
 dump(c2.parametersvalue)
 
-get_slot!(c2,:a)
+get_slot(c2,:a)
 #set_slot!(c1, :f, 2)
+@defgeneric foo(c)
+@defmethod foo(c1::R1) = 1
