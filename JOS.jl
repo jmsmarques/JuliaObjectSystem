@@ -84,11 +84,16 @@ function get_slot(name::Class, slot::Symbol)
 end
 
 function set_slot!(name::Class, slot::Symbol, value)
-    for i in name.class.parameters
-        if i == slot
+    n = 1
+    for i in name.parametersvalue
+        if i[1] == slot
             println("Contem")
+            #dump(name.parametersvalue)
+            deleteat!(name.parametersvalue, n)
+            push!(name.parametersvalue, slot=>value)            
             return
         end
+        n += 1
     end
     println("ERROR: Slot ", slot, " is missing")
     #error("Slot ", slot, " is missing")
