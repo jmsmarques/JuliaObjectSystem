@@ -14,5 +14,6 @@ dump(c2.parametersvalue)
 get_slot(c2,:a)
 #set_slot!(c1, :f, 2)
 @defgeneric foo(c)
+<<<<<<< Updated upstream
 @defmethod foo(c1::R1) = 1
 """

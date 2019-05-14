@@ -14,6 +14,7 @@ struct SpecializedMethod
     name::Symbol
     args::Vector{Symbol}
     body::Expr
+    nativefunction
 end
 
 
@@ -34,6 +35,10 @@ end
 
 #array with all generic functions
 gen_functions = GenericFunction[]
+
+#array with all  Specialized Method
+specialized_methods= SpecializedMethod[]
+
 #end of structs definition
 
 #examples from class
@@ -123,14 +128,16 @@ macro defgeneric(x)
    return object
 end
 
-macro defmethod(name)
+macro defmethod(x)
     println("Inside def method macro")
-    dump(name)
-    for nam in name.args
-        println(nam)
-    end
+    methodName = x.args[1].args[1] 
+    dump(x)
     for gen in gen_functions
-        println(gen)
+        if gen.name == methodName
+            println("Mehtod name ",methodName)
+
+            # object = SpecializedMethod()
+        end
     end
 end
 #end of macros
