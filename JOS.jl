@@ -12,11 +12,10 @@ end
 
 struct SpecializedMethod
     name::Symbol
-    args::Vector{Symbol}
+    args::Vector{Type}
     body::Expr
     nativefunction
 end
-
 
 struct GenericFunction
     name::Symbol
@@ -84,7 +83,6 @@ function check_param_super(param,super)
     return false
 end
 
-
 function verifypairs(class,pairs)
     super = get_super_classe(class)
     println("dump(super): ")
@@ -145,7 +143,9 @@ function set_slot!(name::Class, slot::Symbol, value)
     println("ERROR: Slot ", slot, " is missing")
     #error("Slot ", slot, " is missing")
 end
+#end of functions
 
+#macros functions
 function make_generic(name::Symbol,params)
     args = Symbol[]
     spe_methods = SpecializedMethod[]
@@ -158,10 +158,33 @@ function make_generic(name::Symbol,params)
     push!(gen_functions,object)
 end
 
-#end of functions
+function prepare_make_method(x::Expr) 
+    println("prepare_make_method")
+    dump(x)
 
-#macros functions
+    make_method(name, args, body, functionality)
+end
 
+function make_method(name::Symbol, args::Vector, body::Expr, functionality)
+    #get an array with just the types
+    argstype::Vector{Type} = []
+    for i in args
+        println(i)
+        push!(argstype, typeof(i))
+    end
+
+    #look for the generic function
+    for i in gen_functions
+        if i.name == name
+            if args.length == i.args.length
+                push!(specialized_methods, SpecializedMethod(name, argstype, body, functionality))  
+            else
+               error("Different number of arguments from generic function") 
+            end
+        end
+    end
+    error("Generic function not defined")
+end
 #end of macro functions
 
 
@@ -178,13 +201,13 @@ macro defgeneric(x)
 end
 
 macro defmethod(x)
-    methodname = x.args[1].args[1] 
+    println("begin macro")
     dump(x)
-    for gen in gen_functions
-        if gen.name == methodName
-            println("Mehtod name ",methodName)
-            # object = SpecializedMethod()
-        end
-    end
+    # args1 = x[1]
+    # args2 = x[2]
+    # dump(args1)
+    # println("args2")
+    # dump(args2)
+    return esc(:(prepare_make_method($x)))
 end
 #end of macros

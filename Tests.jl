@@ -17,9 +17,9 @@ set_slot!(c2,:d,4)
 # dump(:(c2.class))
 
 # c2.d
-@defclass(C3, [C1,C2], d,e,i)
-@defclass(C4, [C1,C3], d,e,i)
-
+#@defclass(C3, [C1,C2], d,e,i)
+#@defclass(C4, [C1,C3], d,e,i)
+@defmethod(c1, c2) = 1
 #get_slot(c2,:a)
 #get_slot(c2,:b)
 
