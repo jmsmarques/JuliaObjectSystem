@@ -5,7 +5,7 @@ struct Metaclass
     parameters::Vector
 end
 
-struct Class
+mutable struct Class
     class::Metaclass
     parametersvalue::Vector
 end
@@ -24,15 +24,17 @@ struct GenericFunction
     type::Type
     methods::Vector{SpecializedMethod}
 end
-
+#example form class
 struct IntrospectableFunction
     name
     args
     body
     nativefunction
 end
+square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
 
-
+(f::IntrospectableFunction)(args...) = f.nativefunction(args...)
+#end of examples from class
 
 #array with all generic functions
 gen_functions = GenericFunction[]
@@ -41,12 +43,6 @@ gen_functions = GenericFunction[]
 specialized_methods= SpecializedMethod[]
 
 #end of structs definition
-
-#examples from class
-square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
-
-(f::IntrospectableFunction)(args...) = f.nativefunction(args...)
-#end of examples from class
 
 #functions
 function make_class(name::Symbol, superclass::Vector, slots::Vector{Symbol})
@@ -65,31 +61,66 @@ function make_class(name::Symbol, superclass::Vector, slots::Tuple{Symbol})
     return object
 end
 
-function verifypairs(pairs)
+function get_super_classe(class)
+    super_params = Symbol[]
+    for param in class.parameters
+        push!(super_params,param)
+    end
+    for super in class.superclass
+        for para in super.parameters
+            push!(super_params,para)
+        end
+    end
+    return super_params
+end
+
+function check_param_super(param,super)
+    println("Checking $(param) with $(super)")
+    for i in super
+        if param == i 
+            return true
+        end
+    end
+    return false
+end
+
+
+function verifypairs(class,pairs)
+    super = get_super_classe(class)
+    println("dump(super): ")
+    dump(super)
     param = Pair[]
+    println("Pairs")
+    dump(pairs)
     for i in pairs
         if (isa(i,Pair))
-            println("Added $(i)")
-            push!(param,i) 
+            println("IS PAIR")
+            if (check_param_super(i.first,super))
+                push!(param,i)
+                println("Added $(i)")
+            end
+             
         end
     end
     return param
 end
 
 function make_instance(name::Metaclass, x...)
-    for i in x
-        println(i)
-    end
-    param = verifypairs(x)
-    object = Class(name, param)
+    param = verifypairs(name,x)
+    object = Class(name,param,)
     return object
 end
 
 function get_slot(name::Class, slot::Symbol)
     found = false 
+    is_null = true
+    println("INSIDE GET SLOT")
+    dump(name.parametersvalue)
     for i in name.parametersvalue
         if (i.first == slot)
             println(i.second)
+            println("Type: ",typeof(i.second))
+            println("indside")
             found = true
             break
         end
@@ -114,6 +145,19 @@ function set_slot!(name::Class, slot::Symbol, value)
     println("ERROR: Slot ", slot, " is missing")
     #error("Slot ", slot, " is missing")
 end
+
+function make_generic(name::Symbol,params)
+    args = Symbol[]
+    spe_methods = SpecializedMethod[]
+    for i in x.args
+        if i != 1 
+            push!(args,i)
+        end 
+    end
+    object = GenericFunction(name,args,spe_methods)
+    push!(gen_functions,object)
+end
+
 #end of functions
 
 #macros functions
@@ -128,45 +172,19 @@ end
 
 #create generic method
 macro defgeneric(x)
-    dump(x)
     name = x.args[1]
-    args = Symbol[]
-    spe_methods = SpecializedMethod[]
-    aux_var = 1
-    for i in x.args
-       if aux_var != 1 
-           push!(args,i)
-       end 
-       aux_var = aux_var + 1
-   end
-   object = GenericFunction(name,args,spe_methods)
-   push!(gen_functions,object)
-   
-   return object
+    make_generic(name,x.args)
+    return
 end
 
 macro defmethod(x)
-    println("Inside def method macro")
     methodname = x.args[1].args[1] 
-    println(methodname)
-    
     dump(x)
-
-    object = SpecializedMethod(x.args[1].args[2].args[1], [], :(x.args[2].args[2]), x.args[2].args[2])
-    
-    dump(object)
-
-    object.nativefunction
-
-    return :(x.args[2].args[2])
-    # for gen in gen_functions
-    #     if gen.name == methodName
-    #         println("Method name ",methodName)
-
-    #         # object = SpecializedMethod()
-    #     end
-    # end
-
-
+    for gen in gen_functions
+        if gen.name == methodName
+            println("Mehtod name ",methodName)
+            # object = SpecializedMethod()
+        end
+    end
 end
 #end of macros
