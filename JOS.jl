@@ -116,13 +116,13 @@ function set_slot!(name::Class, slot::Symbol, value)
 end
 #end of functions
 
+#macros functions
+
+#end of macro functions
+
+
 #macros
 macro defclass(name, superclass, slotnames...)
-
-    show(name);println()
-    show(superclass);println()
-    show(slotnames);println()
-
     return :( $(esc(name)) = make_class(($(esc(QuoteNode(name)))), $superclass, $slotnames))
 end
 
