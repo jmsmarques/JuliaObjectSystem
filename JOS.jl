@@ -154,13 +154,6 @@ function make_generic(name::Symbol,params)
     push!(gen_functions,object)
 end
 
-function prepare_make_method(x::Expr) 
-    println("prepare_make_method")
-    dump(x)
-
-    make_method(name, args, body, functionality)
-end
-
 function make_method(name::Symbol, args::Vector, body::Expr, functionality)
     #get an array with just the types
     argstype::Vector{Type} = []
@@ -208,13 +201,31 @@ end
 macro defmethod(x)
     println("begin macro")
     dump(x)
-    # args1 = x[1]
-    # args2 = x[2]
-    # dump(args1)
-    # println("args2")
-    # dump(args2)
-    return :(prepare_make_method($(esc(x))))
+    
+    name = x.args[1].args[1]
+
+    args = []
+    for i = 2:length(x.args[1].args)
+        push!(args, x.args[1].args[i].args[2])
+    end
+    
+    #body = Expr(:quote, x.args[2].args[2])
+    body = x.args[2].args[2]
+
+    @show body
+
+    println(body)
+    dump(body)
+    dump(Meta.parse(":(x*x)"))
+    
+    ex = :(1 * 2)
+    dump(ex)
+    #println(Meta.parse(body))
+    #println("eval: ", eval(body))
+    functionality = 0
+    #functionality = x.args[2].args[2]
+
+    return :(make_method($(QuoteNode(name)), $args, $body, $functionality))
 end
 #end of macros
-
-@macroexpand @defgeneric foo(c1, c2)
+@macroexpand @defmethod foo(c1::C1) = 2 * 2
