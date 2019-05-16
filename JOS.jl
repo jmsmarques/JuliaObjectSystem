@@ -1,3 +1,4 @@
+import Base
 #structs definition
 struct Metaclass
     name::Symbol
@@ -5,9 +6,9 @@ struct Metaclass
     parameters::Vector
 end
 
-mutable struct Class
+struct Class
     class::Metaclass
-    parametersvalue::Vector
+    parametersvalue::Dict{Any,Any}
 end
 
 struct SpecializedMethod
@@ -40,6 +41,20 @@ gen_functions = GenericFunction[]
 #array with all  Specialized Method
 specialized_methods= SpecializedMethod[]
 
+function Base.getproperty(obj::Class,sym::Symbol)
+    result = get_slot(obj,sym)
+    if isa(result,Number)
+        getfield(obj,:parametersvalue)[sym]
+    else
+        return result
+    end
+end
+
+function Base.setproperty!(obj::Class,sym::Symbol,val::Any)
+    set_slot!(obj,sym,val)
+end
+
+# function Base.setproperty!(obj::Class,sym::Symbol,)
 #end of structs definition
 
 #functions
@@ -71,9 +86,8 @@ function get_super_classe(class)
     end
     return super_params
 end
-
+#check if param exist on super
 function check_param_super(param,super)
-    println("Checking $(param) with $(super)")
     for i in super
         if param == i 
             return true
@@ -84,17 +98,11 @@ end
 
 function verifypairs(class,pairs)
     super = get_super_classe(class)
-    println("dump(super): ")
-    dump(super)
-    param = Pair[]
-    println("Pairs")
-    dump(pairs)
+    param = Dict()
     for i in pairs
         if (isa(i,Pair))
-            println("IS PAIR")
             if (check_param_super(i.first,super))
-                push!(param,i)
-                println("Added $(i)")
+                param[i.first] = i.second
             end
              
         end
@@ -104,42 +112,54 @@ end
 
 function make_instance(name::Metaclass, x...)
     param = verifypairs(name,x)
-    object = Class(name,param,)
+    object = Class(name,param)
     return object
 end
 
 function get_slot(name::Class, slot::Symbol)
     found = false 
-    is_null = true
-    println("INSIDE GET SLOT")
-    dump(name.parametersvalue)
-    for i in name.parametersvalue
-        if (i.first == slot)
-            println(i.second)
-            println("Type: ",typeof(i.second))
-            println("indside")
-            found = true
-            break
+    unbound = false
+    result = nothing
+    for par in getfield(getfield(name,:class),:parameters)
+        for (k,v) in getfield(name,:parametersvalue) 
+            if k == par && k == slot
+                result = getfield(name,:parametersvalue)[slot] 
+            elseif k != par && par == slot
+                unbound = true
+            end
         end
     end
-    if !found
-        println("ERROR: Slot $(slot) is missing\n...")
+    if isnothing(result) && !unbound 
+        return "ERROR: Slot $(slot) is missing..."
+    else
+        if isa(result,Number)
+            found = true
+            return result
+        else
+            found = true
+            unbound= true 
+            return "ERROR: Slot $(slot) is unbound..."
+        end
     end
 end
 
 function set_slot!(name::Class, slot::Symbol, value)
-    n = 1
-    for i in name.parametersvalue
-        if i[1] == slot
-            println("Contem")
-            #dump(name.parametersvalue)
-            deleteat!(name.parametersvalue, n)
-            push!(name.parametersvalue, slot=>value)            
-            return
+    for (k,v) in getfield(name,:parametersvalue)
+        if (k == slot)
+            getfield(name,:parametersvalue)[slot] = value 
         end
-        n += 1
     end
-    println("ERROR: Slot ", slot, " is missing")
+    #=n = 1=#
+    # for i in name.parametersvalue
+        # if i[1] == slot
+            # println("Contem")
+            # #dump(name.parametersvalue)
+            # deleteat!(name.parametersvalue, n)
+            # push!(name.parametersvalue, slot=>value)            
+            # return
+        # end
+        # n += 1
+    #=end=#
     #error("Slot ", slot, " is missing")
 end
 #end of functions
