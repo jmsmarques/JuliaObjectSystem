@@ -20,7 +20,6 @@ end
 struct GenericFunction
     name::Symbol
     args::Vector{Symbol}
-    type::Type
     methods::Vector{SpecializedMethod}
 end
 #example form class
@@ -147,14 +146,11 @@ end
 
 #macros functions
 function make_generic(name::Symbol,params)
-    args = Symbol[]
     spe_methods = SpecializedMethod[]
-    for i in x.args
-        if i != 1 
-            push!(args,i)
-        end 
-    end
-    object = GenericFunction(name,args,spe_methods)
+    
+    println("make_generic function")
+
+    object = GenericFunction(name,params,spe_methods)
     push!(gen_functions,object)
 end
 
@@ -187,7 +183,6 @@ function make_method(name::Symbol, args::Vector, body::Expr, functionality)
 end
 #end of macro functions
 
-
 #macros
 macro defclass(name, superclass, slotnames...)
     return :( $(esc(name)) = make_class(($(esc(QuoteNode(name)))), $superclass, $slotnames))
@@ -195,9 +190,19 @@ end
 
 #create generic method
 macro defgeneric(x)
+    dump(x)
     name = x.args[1]
-    make_generic(name,x.args)
-    return
+    dump(name)
+
+    args = []
+    
+    for i = 2:length(x.args)
+        push!(args, x.args[i])
+    end
+
+    dump(args)
+
+    return :( make_generic($(QuoteNode(name)), $args))
 end
 
 macro defmethod(x)
@@ -208,6 +213,8 @@ macro defmethod(x)
     # dump(args1)
     # println("args2")
     # dump(args2)
-    return esc(:(prepare_make_method($x)))
+    return :(prepare_make_method($(esc(x))))
 end
 #end of macros
+
+@macroexpand @defgeneric foo(c1, c2)
