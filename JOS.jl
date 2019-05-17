@@ -13,7 +13,7 @@ end
 
 struct SpecializedMethod
     name::Symbol
-    args::Vector{Type}
+    args::Vector
     nativefunction
 end
 
@@ -31,15 +31,11 @@ struct IntrospectableFunction
 end
 square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
 
-(f::IntrospectableFunction)(args...) = f.nativefunction(args...)
-(f::SpecializedMethod)(args...) = f.nativefunction(args...)
+(f::GenericFunction)(args...) = run_generic_function(f, args...)
 #end of examples from class
 
 #array with all generic functions
 gen_functions = GenericFunction[]
-
-#array with all  Specialized Method
-specialized_methods= SpecializedMethod[]
 
 function Base.getproperty(obj::Class,sym::Symbol)
     result = get_slot(obj,sym)
@@ -172,29 +168,47 @@ function make_generic(name::Symbol,params)
 
     object = GenericFunction(name,params,spe_methods)
     push!(gen_functions,object)
+    return object
 end
 
 function make_method(name::Symbol, args::Vector, functionality)
     #get an array with just the types
-    argstype::Vector{Type} = []
+    argstype::Vector = []
     for i in args
         println(i)
-        push!(argstype, typeof(i))
+        push!(argstype, i)
     end
 
     #look for the generic function
     for i in gen_functions
         if i.name == name
             if length(args) == length(i.args)
-                func = SpecializedMethod(name, argstype, functionality)
-                push!(specialized_methods, func) 
-                return func
+                push!(i.methods, SpecializedMethod(name, argstype, functionality)) 
+                return 
             else
                 error("Different number of arguments from generic function") 
             end
         end
     end
     error("Generic function not defined")
+end
+
+function run_generic_function(f::GenericFunction, args...)
+    for i in f.methods
+        if check_args(i, args...)
+            println(i.nativefunction(args...))
+        end
+    end
+end
+
+function check_args(f::SpecializedMethod, fargs...)
+    for i = 1:length(f.args)
+        if Symbol(typeof(fargs[i])) == f.args[i]
+            continue
+        end
+        return false
+    end
+    return true
 end
 #end of macro functions
 
@@ -217,7 +231,7 @@ macro defgeneric(x)
 
     dump(args)
 
-    return :( make_generic($(QuoteNode(name)), $args))
+    return :($(esc(name)) = make_generic($(QuoteNode(name)), $args))
 end
 
 macro defmethod(x)
@@ -233,24 +247,11 @@ macro defmethod(x)
         push!(args, x.args[1].args[i].args[2])
         push!(args_aux, x.args[1].args[i].args[1])
     end
-    
+
     #body = Expr(:quote, x.args[2].args[2])
     body = x.args[2].args[2]
 
-    println("Body:")
-    @show body
-    
-    #println(Meta.parse(body))
-    #println("eval: ", eval(body))
-    #functionality = x.args[2].args[2]
-
-    b = args -> body
-
-    tuple = (args_aux...,)
-
-    dump(tuple)
-
-    return :($(esc(name)) = make_method($(QuoteNode(name)), $args, ($(args_aux...),) -> $body))
+    return :(make_method($(QuoteNode(name)), $args, ($(args_aux...),) -> $body))
 end
 #end of macros
 @macroexpand @defmethod foo(c1::C1) = 2 * 2
