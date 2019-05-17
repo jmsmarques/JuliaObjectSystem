@@ -175,7 +175,6 @@ function make_method(name::Symbol, args::Vector, functionality)
     #get an array with just the types
     argstype::Vector = []
     for i in args
-        println(i)
         push!(argstype, i)
     end
 
@@ -235,9 +234,6 @@ macro defgeneric(x)
 end
 
 macro defmethod(x)
-    println("begin macro")
-    dump(x)
-    
     name = x.args[1].args[1]
 
     args = []
@@ -254,4 +250,3 @@ macro defmethod(x)
     return :(make_method($(QuoteNode(name)), $args, ($(args_aux...),) -> $body))
 end
 #end of macros
-@macroexpand @defmethod foo(c1::C1) = 2 * 2
