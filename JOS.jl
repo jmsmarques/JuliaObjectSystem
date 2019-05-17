@@ -23,15 +23,9 @@ struct GenericFunction
     methods::Vector{SpecializedMethod}
 end
 #example form class
-struct IntrospectableFunction
-    name
-    args
-    body
-    nativefunction
-end
-square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
 
 (f::GenericFunction)(args...) = run_generic_function(f, args...)
+
 #end of examples from class
 
 #array with all generic functions
