@@ -130,7 +130,7 @@ function get_slot(name::Class, slot::Symbol)
         end
     end
     if isnothing(result) && !unbound 
-        return "ERROR: Slot $(slot) is missing..."
+        error("ERROR: Slot $(slot) is missing\n...")
     else
         if isa(result,Number)
             found = true
@@ -138,7 +138,7 @@ function get_slot(name::Class, slot::Symbol)
         else
             found = true
             unbound= true 
-            return "ERROR: Slot $(slot) is unbound..."
+            error("ERROR: Slot $(slot) is unbound\n...")
         end
     end
 end
