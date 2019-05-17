@@ -9,6 +9,7 @@ end
 struct Class
     class::Metaclass
     parametersvalue::Dict{Any,Any}
+    parameters::Array
 end
 
 struct SpecializedMethod
@@ -62,17 +63,27 @@ function make_class(name::Symbol, superclass::Vector, slots::Tuple)
     return object
 end
 
-function get_super_classe(class)
-    super_params = Symbol[]
-    for param in class.parameters
-        push!(super_params,param)
-    end
-    for super in class.superclass
-        for para in super.parameters
-            push!(super_params,para)
+function get_super_classe(class,super_params)
+    # super_params = Symbol[]
+    #dump(class)
+    for superclass in class
+        for param in superclass.parameters
+            push!(super_params,param)
+        end
+        for superparam in superclass.superclass
+            for metaparam in superparam.parameters
+                push!(super_params,metaparam)
+            end
         end
     end
-    return super_params
+    # return super_params
+end
+
+
+function get_parameters(class,params)
+    for param in class
+        push!(params,param)
+    end
 end
 #check if param exist on super
 function check_param_super(param,super)
@@ -84,23 +95,30 @@ function check_param_super(param,super)
     return false
 end
 
-function verifypairs(class,pairs)
-    super = get_super_classe(class)
-    param = Dict()
+function verifypairs(class,pairs,paramnames)
+    super_params = Symbol[]
+    get_super_classe(class.superclass,super_params)
+    get_parameters(class.parameters,super_params)
+    #println("Super: ",super_params)
+    paramnames = copy(super_params)
+    #println("Param: ",paramnames)
+    param = Dict() 
     for i in pairs
         if (isa(i,Pair))
-            if (check_param_super(i.first,super))
+            if (check_param_super(i.first,super_params))
                 param[i.first] = i.second
             end
              
         end
     end
-    return param
+    return param,paramnames
 end
 
 function make_instance(name::Metaclass, x...)
-    param = verifypairs(name,x)
-    object = Class(name,param)
+    paramnames = Symbol[]
+    paramvalue,paramnames = verifypairs(name,x,paramnames)
+    #println(paramnames)
+    object = Class(name,paramvalue,paramnames)
     return object
 end
 
@@ -108,10 +126,7 @@ function get_slot(name::Class, slot::Symbol)
     found = false 
     unbound = false
     result = nothing
-    println("Class: ",name)
-    dump(name)
     for (k,v) in getfield(name,:parametersvalue) 
-        println("Key: ",k)
         if k == slot
             result = getfield(name,:parametersvalue)[slot] 
             if isnothing(result) == false
@@ -121,13 +136,13 @@ function get_slot(name::Class, slot::Symbol)
             end
         end
     end
-    if isnothing(result) && !unbound 
+    if isnothing(result)  
         error("ERROR: Slot $(slot) is missing\n...")
     end
 end
 
 function set_slot!(name::Class, slot::Symbol, value)
-    for (k,v) in getfield(name,:parametersvalue)
+    for k in getfield(name,:parameters)
         if (k == slot)
             getfield(name,:parametersvalue)[slot] = value 
         end
