@@ -39,7 +39,8 @@ gen_functions = GenericFunction[]
 
 function Base.getproperty(obj::Class,sym::Symbol)
     result = get_slot(obj,sym)
-    if isa(result,Number)
+    # println(result)
+    if !isnothing(result)
         getfield(obj,:parametersvalue)[sym]
     else
         return result
@@ -50,16 +51,13 @@ function Base.setproperty!(obj::Class,sym::Symbol,val::Any)
     set_slot!(obj,sym,val)
 end
 
-# function Base.setproperty!(obj::Class,sym::Symbol,)
-#end of structs definition
-
 #functions
 function make_class(name::Symbol, superclass::Vector, slots::Vector{Symbol})
     object = Metaclass(name, superclass, slots)
     return object
 end
 
-function make_class(name::Symbol, superclass::Vector, slots::Tuple{Symbol})
+function make_class(name::Symbol, superclass::Vector, slots::Tuple)
     params::Vector{Symbol} = []
 
     for i in slots
@@ -116,26 +114,21 @@ function get_slot(name::Class, slot::Symbol)
     found = false 
     unbound = false
     result = nothing
-    for par in getfield(getfield(name,:class),:parameters)
-        for (k,v) in getfield(name,:parametersvalue) 
-            if k == par && k == slot
-                result = getfield(name,:parametersvalue)[slot] 
-            elseif k != par && par == slot
-                unbound = true
+    println("Class: ",name)
+    dump(name)
+    for (k,v) in getfield(name,:parametersvalue) 
+        println("Key: ",k)
+        if k == slot
+            result = getfield(name,:parametersvalue)[slot] 
+            if isnothing(result) == false
+                return result
+            else
+                error("ERROR: Slot $(slot) is unbound\n...")
             end
         end
     end
     if isnothing(result) && !unbound 
         error("ERROR: Slot $(slot) is missing\n...")
-    else
-        if isa(result,Number)
-            found = true
-            return result
-        else
-            found = true
-            unbound= true 
-            error("ERROR: Slot $(slot) is unbound\n...")
-        end
     end
 end
 
@@ -164,7 +157,7 @@ end
 function make_generic(name::Symbol,params)
     spe_methods = SpecializedMethod[]
     
-    println("make_generic function")
+    # println("make_generic function")
 
     object = GenericFunction(name,params,spe_methods)
     push!(gen_functions,object)
@@ -219,9 +212,9 @@ end
 
 #create generic method
 macro defgeneric(x)
-    dump(x)
+    # dump(x)
     name = x.args[1]
-    dump(name)
+    # dump(name)
 
     args = []
     
@@ -229,14 +222,14 @@ macro defgeneric(x)
         push!(args, x.args[i])
     end
 
-    dump(args)
+    # dump(args)
 
     return :($(esc(name)) = make_generic($(QuoteNode(name)), $args))
 end
 
 macro defmethod(x)
-    println("begin macro")
-    dump(x)
+    # println("begin macro")
+    # dump(x)
     
     name = x.args[1].args[1]
 
@@ -254,4 +247,4 @@ macro defmethod(x)
     return :(make_method($(QuoteNode(name)), $args, ($(args_aux...),) -> $body))
 end
 #end of macros
-@macroexpand @defmethod foo(c1::C1) = 2 * 2
+# @macroexpand @defmethod foo(c1::C1) = 2 * 2
