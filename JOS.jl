@@ -14,7 +14,6 @@ end
 struct SpecializedMethod
     name::Symbol
     args::Vector{Type}
-    body::Expr
     nativefunction
 end
 
@@ -174,7 +173,7 @@ function make_generic(name::Symbol,params)
     push!(gen_functions,object)
 end
 
-function make_method(name::Symbol, args::Vector, body::Expr, functionality)
+function make_method(name::Symbol, args::Vector, functionality)
     #get an array with just the types
     argstype::Vector{Type} = []
     for i in args
@@ -186,7 +185,7 @@ function make_method(name::Symbol, args::Vector, body::Expr, functionality)
     for i in gen_functions
         if i.name == name
             if args.length == i.args.length
-                push!(specialized_methods, SpecializedMethod(name, argstype, body, functionality))  
+                push!(specialized_methods, SpecializedMethod(name, argstype, functionality))  
             else
                error("Different number of arguments from generic function") 
             end
@@ -225,27 +224,30 @@ macro defmethod(x)
     name = x.args[1].args[1]
 
     args = []
+    args_aux = []
+
     for i = 2:length(x.args[1].args)
         push!(args, x.args[1].args[i].args[2])
+        push!(args_aux, x.args[1].args[i].args[1])
     end
     
     #body = Expr(:quote, x.args[2].args[2])
     body = x.args[2].args[2]
 
+    println("Body:")
     @show body
-
-    println(body)
-    dump(body)
-    dump(Meta.parse(":(x*x)"))
     
-    ex = :(1 * 2)
-    dump(ex)
     #println(Meta.parse(body))
     #println("eval: ", eval(body))
-    functionality = 0
     #functionality = x.args[2].args[2]
 
-    return :(make_method($(QuoteNode(name)), $args, $body, $functionality))
+    b = args -> body
+
+    tuple = (args_aux...,)
+
+    dump(tuple)
+
+    return :(make_method($(QuoteNode(name)), $args, ($tuple) -> $body))
 end
 #end of macros
 @macroexpand @defmethod foo(c1::C1) = 2 * 2
