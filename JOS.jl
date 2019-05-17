@@ -32,6 +32,7 @@ end
 square = IntrospectableFunction(:square,:(x,), :(x*x), x->x*x)
 
 (f::IntrospectableFunction)(args...) = f.nativefunction(args...)
+(f::SpecializedMethod)(args...) = f.nativefunction(args...)
 #end of examples from class
 
 #array with all generic functions
@@ -184,10 +185,12 @@ function make_method(name::Symbol, args::Vector, functionality)
     #look for the generic function
     for i in gen_functions
         if i.name == name
-            if args.length == i.args.length
-                push!(specialized_methods, SpecializedMethod(name, argstype, functionality))  
+            if length(args) == length(i.args)
+                func = SpecializedMethod(name, argstype, functionality)
+                push!(specialized_methods, func) 
+                return func
             else
-               error("Different number of arguments from generic function") 
+                error("Different number of arguments from generic function") 
             end
         end
     end
@@ -247,7 +250,7 @@ macro defmethod(x)
 
     dump(tuple)
 
-    return :(make_method($(QuoteNode(name)), $args, ($tuple) -> $body))
+    return :($(esc(name)) = make_method($(QuoteNode(name)), $args, ($(args_aux...),) -> $body))
 end
 #end of macros
 @macroexpand @defmethod foo(c1::C1) = 2 * 2
